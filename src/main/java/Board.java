@@ -1,28 +1,56 @@
 import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.StdOut;
-import edu.princeton.cs.algs4.MinPQ;
+import java.util.*;
 
 public class Board {
+
+    private final int[][] tiles;
+    private final int n;
 
     public Board(int[][] blocks) {
         // construct a board from an n-by-n array of blocks
         // (where blocks[i][j] = block in row i, column j)
         // suggestions for immutability in the Binary Heap video
+        this.n = blocks.length;
+        this.tiles = new int[n][n];
+        for (int i = 0; i < n; i++) {
+            this.tiles[i] = Arrays.copyOf(blocks[i], n);
+        }
     }
 
     public int dimension() {
         // board dimension n
-        return 0;
+        return n;
     }
 
     public int hamming() {
         // number of blocks out of place
-        return 0;
+        int count = 0;
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                int expected = i * n + j + 1;
+                if (tiles[i][j] != 0 && tiles[i][j] != expected) {
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     public int manhattan() {
         // sum of Manhattan distances between blocks and goal
-        return 0;
+        int sum = 0;
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                int value = tiles[i][j];
+                if (value != 0) {
+                    int targetRow = (value - 1) / n;
+                    int targetCol = (value - 1) % n;
+                    sum += Math.abs(i - targetRow) + Math.abs(j - targetCol);
+                }
+            }
+        }
+        return sum;
     }
 
     public String toString() {
@@ -36,18 +64,43 @@ public class Board {
     }
 
     public boolean equals(Object y) {
-        // does this board equal y?
-        return false;
+        if (y == this) {
+            return true;
+        }
+        if (y == null || y.getClass() != this.getClass()){
+            return false;
+        }
+        Board that = (Board) y;
+        return Arrays.deepEquals(this.tiles, that.tiles);
+    }
+
+    private int[][] copyTiles() {
+        int[][] copy = new int[n][n];
+        for (int i = 0; i < n; i++) {
+            copy[i] = Arrays.copyOf(tiles[i], n);
+        }
+        return copy;
     }
 
     public Board twin() {
         // a board that is obtained by exchanging any pair of blocks
+        int[][] twinTiles = copyTiles();
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n - 1; j++) {
+                if (twinTiles[i][j] != 0 && twinTiles[i][j + 1] != 0) {
+                    int temp = twinTiles[i][j];
+                    twinTiles[i][j] = twinTiles[i][j + 1];
+                    twinTiles[i][j + 1] = temp;
+                    return new Board(twinTiles);
+                }
+            }
+        }
         return null;
     }
 
     public boolean isGoal() {
         // is this board the goal board?
-        return false;
+        return hamming() == 0;
     }
 
     public Iterable<Board> neighbors() {
