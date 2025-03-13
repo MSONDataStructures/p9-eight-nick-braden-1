@@ -5,81 +5,73 @@ import java.util.*;
 
 public class Solver {
 
-    // this is a nested class for the search nodes in the game tree
+    // class for game nodes
     private static class SearchNode implements Comparable<SearchNode> {
-        private final Board board;        // current board state
-        private final int moves;          // number of moves to reach this board
-        private final SearchNode previous; // previous search node
-        private final int priority;       // priority value for A* algorithm
+        private final Board board;
+        private final int moves;
+        private final SearchNode previous;
+        private final int priority;
 
         public SearchNode(Board board, int moves, SearchNode previous) {
             this.board = board;
             this.moves = moves;
             this.previous = previous;
-            // using manhattan priority function (manhattan distance + moves)
+            // manhattan seems to work better
             this.priority = board.manhattan() + moves;
-
-            // note: could also use hamming priority but manhattan works better
-            // this.priority = board.hamming() + moves;
         }
 
-        // this lets the MinPQ compare search nodes
-        @Override
         public int compareTo(SearchNode that) {
-            // lower priority value comes first
             return this.priority - that.priority;
         }
     }
 
-    private SearchNode solution; // will store the solution when found
-    private boolean solvable;    // tracks if puzzle can be solved
+    private SearchNode solution;
+    private boolean solvable;
 
     public Solver(Board initial) {
-        // find a solution to the initial board (using the A* algorithm)
+        // throw error if board is null
         if (initial == null) {
             throw new IllegalArgumentException("board cannot be null");
         }
 
-        // need two priority queues - one for the original board
-        // and one for the twin board to detect unsolvable puzzles
+        // need two queues for original and twin
         MinPQ<SearchNode> pq = new MinPQ<>();
         MinPQ<SearchNode> twinPq = new MinPQ<>();
 
-        // insert starting positions
+        // start the search
         pq.insert(new SearchNode(initial, 0, null));
         twinPq.insert(new SearchNode(initial.twin(), 0, null));
 
-        // run A* algorithm on both puzzles at the same time
+        // keep searching until we find a solution
         while (!pq.isEmpty() && !twinPq.isEmpty()) {
-            // get the next board with minimum priority
+            // get next boards to check
             SearchNode node = pq.delMin();
             SearchNode twinNode = twinPq.delMin();
 
-            // check if we reached goal in original puzzle
+            // check if we solved it
             if (node.board.isGoal()) {
                 solvable = true;
                 solution = node;
                 break;
             }
 
-            // check if twin reached goal (means original is unsolvable)
+            // check if twin is solved (means original can't be solved)
             if (twinNode.board.isGoal()) {
                 solvable = false;
                 solution = null;
                 break;
             }
 
-            // get all neighbors of current board and add to queue
+            // try all possible next moves
             for (Board neighbor : node.board.neighbors()) {
-                // don't revisit the previous board (critical optimization)
+                // don't go back to previous board
                 if (node.previous != null && neighbor.equals(node.previous.board)) {
                     continue;
                 }
-                // add this neighbor to the queue
                 pq.insert(new SearchNode(neighbor, node.moves + 1, node));
             }
 
-            // do the same for twin puzzle
+            // do same for twin
             for (Board neighbor : twinNode.board.neighbors()) {
                 if (twinNode.previous != null && neighbor.equals(twinNode.previous.board)) {
                     continue;
@@ -89,30 +81,30 @@ public class Solver {
         }
     }
 
+    // check if puzzle can be solved
     public boolean isSolvable() {
-        // is the initial board solvable?
         return solvable;
     }
 
+    // get number of moves needed
     public int moves() {
-        // min number of moves to solve initial board; -1 if unsolvable
         if (!isSolvable()) {
-            return -1; // return -1 if puzzle can't be solved
+            return -1; // can't be solved
         }
         return solution.moves;
     }
 
+    // get the steps to solve it
     public Iterable<Board> solution() {
-        // sequence of boards in a shortest solution; null if unsolvable
         if (!isSolvable()) {
             return null;
         }
 
-        // build the solution path by working backwards from goal
+        // make a list of all the boards in the solution
         LinkedList<Board> path = new LinkedList<>();
         SearchNode current = solution;
 
-        // add each board to the front of the list to get right order
+        // add boards in the right order
         while (current != null) {
             path.addFirst(current.board);
             current = current.previous;
@@ -121,9 +113,9 @@ public class Solver {
         return path;
     }
 
+    // main function to run the program
     public static void main(String[] args) {
-        // solve a slider puzzle from a file
-        // create initial board from file
+        // get puzzle from file
         In in = new In(args[0]);
         int n = in.readInt();
         int[][] blocks = new int[n][n];
@@ -132,10 +124,10 @@ public class Solver {
                 blocks[i][j] = in.readInt();
         Board initial = new Board(blocks);
 
-        // solve the puzzle
+        // solve it
         Solver solver = new Solver(initial);
 
-        // print solution to standard output
+        // show the answer
         if (!solver.isSolvable())
             StdOut.println("No solution possible");
         else {
