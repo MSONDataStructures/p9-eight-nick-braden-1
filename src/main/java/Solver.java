@@ -6,7 +6,7 @@ import java.util.*;
 public class Solver {
 
     // this is a nested class for the search nodes in the game tree
-    private class SearchNode implements Comparable<SearchNode> {
+    private static class SearchNode implements Comparable<SearchNode> {
         private final Board board;        // current board state
         private final int moves;          // number of moves to reach this board
         private final SearchNode previous; // previous search node
